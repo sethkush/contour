@@ -6,22 +6,17 @@ name: contour # you probably want to 'snapcraft register <name>'
 
 grade: devel # must be 'stable' to release into candidate/stable channels
 adopt-info: contour
-base: core20 # the base snap is the execution environment for this snap
+base: core18 # the base snap is the execution environment for this snap
 confinement: classic # devmode, classic, strict
 
 apps:
-  shell:
-    command: bin/busybox
-    plugs:
-      - home
-
   contour:
     command: bin/desktop-launch contour
     desktop: usr/share/applications/contour.desktop
     common-id: org.christianparpart.contour
-    # environment:
-    #   # Use GTK3 cursor theme, icon theme and open/save file dialogs.
-    #   QT_QPA_PLATFORMTHEME: gtk3
+    environment:
+      QT_QPA_PLATFORMTHEME: "KDE"
+      QT_DEBUG_PLUGINS: "1"
     plugs:
       - desktop
       - home
@@ -33,12 +28,6 @@ apps:
     #   - kde-neon
 
 parts:
-  shell:
-    after: [contour]
-    plugin: nil
-    stage-packages:
-      - busybox
-
   contour:
     after: [qt5]
     source: .
@@ -48,9 +37,7 @@ parts:
       - usr/share/appdata/contour.appdata.xml
     build-packages:
       - build-essential
-      - cmake
       - extra-cmake-modules
-      - g++
       - libboost-all-dev
       - libc6-dev
       - libfontconfig1-dev
@@ -59,7 +46,6 @@ parts:
       - libkf5windowsystem-dev
       - libqt5gui5
       - libqt5opengl5-dev
-      - make
       - ncurses-bin
       - pkg-config
       - qtbase5-dev
@@ -72,11 +58,12 @@ parts:
       - libqt5core5a
       - libqt5gui5
       - libqt5network5
-    cmake-parameters:
-      - "-D3rdparty_DOWNLOAD_DIR=\"_3rdparty\""
+      - busybox
+    #cmake-parameters:
+    configflags:
       - "-DCMAKE_BUILD_TYPE=Release"
-      - "-DCMAKE_CXX_FLAGS=\"-DNDEBUG=1 -fdiagnostics-color=always\""
-      - "-DCMAKE_INSTALL_PREFIX=/usr"
+      - "-DCMAKE_CXX_FLAGS=\"-fdiagnostics-color=always\""
+      - "-DCMAKE_INSTALL_PREFIX=/"
       - "-DCONTOUR_BLUR_PLATFORM_KWIN=ON"
       - "-DCONTOUR_EXAMPLES=OFF"
       - "-DCRISPY_TESTING=OFF"
@@ -115,8 +102,8 @@ parts:
     plugin: nil
     stage-packages:
       - libgl1-mesa-dri
-    build-attributes:
-      - no-patchelf # Otherwise snapcraft may strip the build ID and cause the driver to crash
+    # build-attributes:
+    #   - no-patchelf # Otherwise snapcraft may strip the build ID and cause the driver to crash
     prime:
       - -lib/udev
       - -usr/doc
