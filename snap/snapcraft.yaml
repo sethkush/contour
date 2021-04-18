@@ -6,12 +6,12 @@ name: contour # you probably want to 'snapcraft register <name>'
 
 grade: devel # must be 'stable' to release into candidate/stable channels
 adopt-info: contour
-base: core18 # the base snap is the execution environment for this snap
+base: core20 # the base snap is the execution environment for this snap
 confinement: classic # devmode, classic, strict
 
 apps:
   contour:
-    command: bin/desktop-launch contour
+    command: bin/desktop-launch $SNAP/bin/contour
     desktop: usr/share/applications/contour.desktop
     common-id: org.christianparpart.contour
     environment:
@@ -31,7 +31,7 @@ parts:
   contour:
     after: [qt5]
     source: .
-    source-type: git
+    #source-type: git
     plugin: cmake
     parse-info:
       - usr/share/appdata/contour.appdata.xml
@@ -52,15 +52,14 @@ parts:
     stage-packages:
       - libfontconfig1
       - libfreetype6
-      - libglu1-mesa
       - libharfbuzz0b
       - libkf5windowsystem5
       - libqt5core5a
       - libqt5gui5
       - libqt5network5
-      - busybox
-    #cmake-parameters:
-    configflags:
+      # - libglu1-mesa
+    #configflags:
+    cmake-parameters:
       - "-DCMAKE_BUILD_TYPE=Release"
       - "-DCMAKE_CXX_FLAGS=\"-fdiagnostics-color=always\""
       - "-DCMAKE_INSTALL_PREFIX=/"
@@ -102,8 +101,8 @@ parts:
     plugin: nil
     stage-packages:
       - libgl1-mesa-dri
-    # build-attributes:
-    #   - no-patchelf # Otherwise snapcraft may strip the build ID and cause the driver to crash
+    build-attributes:
+      - no-patchelf # Otherwise snapcraft may strip the build ID and cause the driver to crash
     prime:
       - -lib/udev
       - -usr/doc

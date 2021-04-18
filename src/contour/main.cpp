@@ -15,6 +15,7 @@
 
 int main(int argc, char const* argv[], char const* envp[])
 {
+    printf("argv[0]: %s\n", argv[0]);
     for (int i = 0; envp[i]; ++i)
         printf("%2d: %s\n", i, envp[i]);
 
