@@ -29,6 +29,7 @@ macro(ThirdPartiesAdd_fmtlib)
             URL_HASH "${3rdparty_fmtlib_CHECKSUM}"
             DOWNLOAD_DIR "${3rdparty_DOWNLOAD_DIR}"
             DOWNLOAD_NAME "fmtlib-${3rdparty_fmtlib_VERSION}.tar.gz"
+            INSTALL_COMMAND ""
         )
         FetchContent_MakeAvailable(fmtlib)
     else()
@@ -61,6 +62,7 @@ macro(ThirdPartiesAdd_Catch2)
             URL_HASH "${3rdparty_Catch2_CHECKSUM}"
             DOWNLOAD_DIR "${3rdparty_DOWNLOAD_DIR}"
             DOWNLOAD_NAME "catch2-${3rdparty_Catch2_VERSION}.tar.gz"
+            INSTALL_COMMAND ""
         )
         FetchContent_MakeAvailable(Catch2)
     else()
@@ -85,6 +87,7 @@ macro(ThirdPartiesAdd_range_v3)
             URL_HASH "${3rdparty_range_v3_CHECKSUM}"
             DOWNLOAD_DIR "${3rdparty_DOWNLOAD_DIR}"
             DOWNLOAD_NAME "range-v3-${3rdparty_range_v3_VERSION}.tar.gz"
+            INSTALL_COMMAND ""
         )
         FetchContent_MakeAvailable(range-v3)
     else()
@@ -144,6 +147,7 @@ macro(ThirdPartiesAdd_yaml_cpp)
             DOWNLOAD_NAME "yaml-cpp-${3rdparty_yaml_cpp_VERSION}.tar.gz"
             # PATCH_COMMAND breaks on GitHub CI for Windows (but not on local Windows machine, what?)
             # PATCH_COMMAND patch "${yaml_cpp_patch}"
+            INSTALL_COMMAND ""
         )
         FetchContent_MakeAvailable(yaml-cpp)
     else()

@@ -13,8 +13,11 @@
  */
 #include <contour/ContourGuiApp.h>
 
-int main(int argc, char const* argv[])
+int main(int argc, char const* argv[], char const* envp[])
 {
+    for (int i = 0; envp[i]; ++i)
+        printf("%2d: %s\n", i, envp[i]);
+
 #if defined(CONTOUR_FRONTEND_GUI)
     contour::ContourGuiApp app;
 #else

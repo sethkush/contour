@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>org.christianparpart.contour</id>
+  <name>Contour Terminal Emulator</name>
+  <summary>GPU accelerated terminal emulator for power users</summary>
+  <description>
+    `contour` is a modern terminal emulator, for everyday use.
+    It is fully separating emulation from graphical representation for clear
+    separation of concerns but also for special features
+    to come before version 1.0 is released
+    (headless terminal server with GUI &amp; TUI frontends).
+  </description>
+  <icon type="local">src/contour/res/contour-logo-256.png</icon>
+  <launchable type="desktop-id">
+    org.christianparpart.contour.desktop
+  </launchable>
+  <releases>
+    <!-- TODO: auto-fill via cmake -->
+    <release date="2021-02-04" version="0.2.0"/>
+  </releases>
+</component>

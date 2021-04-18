@@ -270,6 +270,7 @@ else()
     install(TARGETS contour DESTINATION bin)
     install(FILES "contour.desktop" DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
     install(FILES "res/images/contour-logo-256.png" DESTINATION "${CMAKE_INSTALL_DATADIR}/pixmaps" RENAME "contour.png")
+    install(FILES "contour.appdata.xml" DESTINATION "${CMAKE_INSTALL_DATADIR}/appdata" RENAME "contour.appdata.xml")
     install(DIRECTORY "${terminfo_basedir}" DESTINATION "${CMAKE_INSTALL_DATADIR}")
     # TODO: install Changelog.md to /usr/share/doc/contour/Changelog.md(.gz)?
 endif()
