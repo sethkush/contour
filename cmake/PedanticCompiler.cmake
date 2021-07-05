@@ -19,6 +19,7 @@ function(try_add_compile_options FLAG)
 endfunction()
 
 option(PEDANTIC_COMPILER "Compile the project with almost all warnings turned on." OFF)
+option(PEDANTIC_COMPILER_WERROR "Compile the project -Werror enabled." OFF)
 
 if(${PEDANTIC_COMPILER})
     if(("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang"))
@@ -39,7 +40,10 @@ if(${PEDANTIC_COMPILER})
         try_add_compile_options(-pedantic)
         try_add_compile_options(-Wconversion)
         try_add_compile_options(-fdiagnostics-color=always)
-        #try_add_compile_options(-Werror) # XXX Not yet, but hopefully soon.
+        if(${PEDANTIC_COMPILER_WERROR})
+            # XXX Not yet enabled by default, but hopefully soon.
+            try_add_compile_options(-Werror)
+        endif()
         try_add_compile_options(-Wextra-semi)
         try_add_compile_options(-Wpessimizing-move)
         try_add_compile_options(-Wredundant-move)

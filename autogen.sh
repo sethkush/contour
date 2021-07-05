@@ -29,5 +29,7 @@ exec cmake "${ROOTDIR}" \
            -DCONTOUR_COVERAGE="OFF" \
            -DCONTOUR_PERF_STATS="OFF" \
            -DCONTOUR_BLUR_PLATFORM_KWIN="ON" \
+           -DPEDANTIC_COMPILER="ON" \
+           -DPEDANTIC_COMPILER_WERROR="OFF" \
            -GNinja
 
