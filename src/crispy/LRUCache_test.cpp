@@ -57,9 +57,23 @@ TEST_CASE("LRUCache.ctor", "[lrucache]")
 
 TEST_CASE("LRUCache.at", "[lrucache]")
 {
+    printf("a\n");
     auto cache = crispy::LRUCache<int, int>(2);
+    printf("b\n");
 
-    CHECK_THROWS_AS(cache.at(2), std::out_of_range);
+    try {
+        printf("c\n");
+        cache.at(2);
+        printf("d\n");
+        CHECK(false);
+    }
+    catch (std::out_of_range)
+    {
+        printf("e ok\n");
+        CHECK(true);
+    }
+    printf("f\n");
+    //CHECK_THROWS_AS(cache.at(2), std::out_of_range);
     cache[2] = 4;
     CHECK_NOTHROW(cache.at(2));
 }
@@ -68,36 +82,52 @@ TEST_CASE("LRUCache.get_or_emplace", "[lrucache]")
 {
     auto cache = crispy::LRUCache<int, int>(2);
 
+    // add first pair
     int& a = cache.get_or_emplace(2, []() { return 4; });
     CHECK(a == 4);
+    CHECK(cache.contains(2));
     CHECK(cache.at(2) == 4);
     CHECK(cache.size() == 1);
     CHECK(join(cache.keys()) == "2"sv);
 
-    int& a2 = cache.get_or_emplace(2, []() { return -4; });
-    CHECK(a2 == 4);
-    CHECK(cache.at(2) == 4);
-    CHECK(cache.size() == 1);
+    // int& a2 = cache.get_or_emplace(2, []() { return -4; });
+    // std::cout << fmt::format("keys: {}\n", join(cache.keys()));
+    // CHECK(a2 == 4);
+    // CHECK(cache.contains(2));
+    // CHECK(cache.at(2) == 4);
+    // CHECK(cache.size() == 1);
+    // CHECK(join(cache.keys()) == "2"sv);
 
+    // add second pair
     int& b = cache.get_or_emplace(3, []() { return 6; });
+    std::cout << fmt::format("keys: {}\n", join(cache.keys()));
     CHECK(b == 6);
+    CHECK(cache.contains(3));
     CHECK(cache.at(3) == 6);
     CHECK(cache.size() == 2);
     CHECK(join(cache.keys()) == "3 2"sv);
 
+    // add third pair, evicting first.
     int& c = cache.get_or_emplace(4, []() { return 8; });
+    std::cout << fmt::format("keys: {}\n", join(cache.keys()));
     CHECK(join(cache.keys()) == "4 3"sv);
     CHECK(c == 8);
+    cout << "repr1: "; cache.repr(std::cout); cout << endl;
     CHECK(cache.at(4) == 8);
     CHECK(cache.size() == 2);
+    cout << "repr2: "; cache.repr(std::cout); cout << endl;
     CHECK(cache.contains(3));
+    cout << "repr3: "; cache.repr(std::cout); cout << endl;
     CHECK_FALSE(cache.contains(2)); // thrown out
 
-    int& b2 = cache.get_or_emplace(3, []() { return -3; });
-    CHECK(join(cache.keys()) == "3 4"sv);
-    CHECK(b2 == 6);
-    CHECK(cache.at(3) == 6);
-    CHECK(cache.size() == 2);
+    cout << "repr4: "; cache.repr(std::cout); cout << endl;
+
+    // int& b2 = cache.get_or_emplace(3, []() { return -3; });
+    //
+    // CHECK(b2 == 6);
+    // CHECK(join(cache.keys()) == "3 4"sv);
+    // CHECK(cache.at(3) == 6);
+    // CHECK(cache.size() == 2);
 }
 
 TEST_CASE("LRUCache.operator[]", "[lrucache]")
@@ -120,11 +150,16 @@ TEST_CASE("LRUCache.operator[]", "[lrucache]")
     CHECK(join(cache.keys()) == "4 3"sv);
     CHECK(cache[4] == 8);
     CHECK(cache.size() == 2);
+    cout << "repr4: "; cache.repr(std::cout); cout << endl;
+    (void) cache.contains(3);
     CHECK(cache.contains(3));
+    cout << "repr3: "; cache.repr(std::cout); cout << endl;
     CHECK_FALSE(cache.contains(2)); // thrown out
 
+    cout << "repr2: "; cache.repr(std::cout); cout << endl;
     (void) cache[3]; // move 3 to the front (currently at the back)
     CHECK(join(cache.keys()) == "3 4"sv);
+    cout << "repr1: "; cache.repr(std::cout); cout << endl;
     cache[5] = 10;
     CHECK(join(cache.keys()) == "5 3"sv);
     CHECK(cache.at(5) == 10);
