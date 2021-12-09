@@ -170,18 +170,34 @@ void DecorationRenderer::rebuild()
         );
     } // }}}
     { // {{{ dotted underline
-        auto const radius = max(1, int(ceil(underlineThickness() / 2.0)));
+        auto const radius = gridMetrics_.baseline - gridMetrics_.underline.position;
         auto const diameter = radius * 2;
         auto const y0 = max(radius, underlinePosition() - radius); // offset to the bottom line of the grid-cell.
         auto const height = Height(1 + y0 + radius);
-        auto image = atlas::Buffer(*width * *height, 0);
 
         auto const numberOfCircles = int(ceil(unbox<double>(width) / double(diameter) / 3.0));
 
-        auto const xOffsetStart = radius;
+        fmt::print(
+            "w={}, base={}, ULP={}, UT={}, r={}, d={}, y0={}, h={}, #Circles={}\n",
+            width,
+            gridMetrics_.baseline,
+            gridMetrics_.underline.position,
+            underlineThickness(),
+            radius,
+            diameter,
+            y0,
+            height,
+            numberOfCircles
+        );
+
+        auto image = atlas::Buffer(*width * *height, 0);
+        // auto block = blockElement(ImageSize{Width(width), height});
+        auto const xOffsetStart = diameter;
+        auto const segments = unbox<int>(width) / (numberOfCircles * 2);
+        // TODO: AA via Pixmap
         for (int circle = 0; circle < numberOfCircles; ++circle)
         {
-            auto const bitmapStartX = xOffsetStart + circle * diameter * 3;
+            auto const bitmapStartX = unbox<int>(width) / (circle + 1) - radius;
 
             for (int y = -radius; y <= radius; ++y)
             {
