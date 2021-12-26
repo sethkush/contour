@@ -1,6 +1,7 @@
 ### 0.3.0 (unreleased)
 
 - Fixes installation from `.deb` (missing terminfo dependency)
+- Fixes VT sequence `DCH` default parameter to be 1 (was 0).
 - Improved VT backend performance (#342).
 - Improved text selection behaviour.
 - Adds new configuration option `mouse_block_selection_modifier`.

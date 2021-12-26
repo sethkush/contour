@@ -1364,7 +1364,7 @@ ApplyResult Sequencer<T>::apply(FunctionDefinition const& _function, Sequence co
     case DA1: screen_.sendDeviceAttributes(); break;
     case DA2: screen_.sendTerminalId(); break;
     case DA3: return ApplyResult::Unsupported;
-    case DCH: screen_.deleteCharacters(_seq.param_or<ColumnCount>(0, ColumnCount { 0 })); break;
+    case DCH: screen_.deleteCharacters(_seq.param_or<ColumnCount>(0, ColumnCount { 1 })); break;
     case DECCRA: {
         // The coordinates of the rectangular area are affected by the setting of origin mode (DECOM).
         // DECCRA is not affected by the page margins.
