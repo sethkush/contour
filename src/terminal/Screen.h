@@ -55,6 +55,8 @@
 namespace terminal
 {
 
+class DECTextLocator;
+
 /**
  * Terminal Screen.
  *

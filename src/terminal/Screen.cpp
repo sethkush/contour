@@ -1166,15 +1166,18 @@ void Screen<T>::sendDeviceAttributes()
         return "1"; // Should never be reached.
     }();
 
+    // clang-format off
     auto const attrs = to_params(DeviceAttributes::AnsiColor |
-                                 // DeviceAttributes::AnsiTextLocator |
-                                 DeviceAttributes::CaptureScreenBuffer | DeviceAttributes::Columns132 |
+                                 DeviceAttributes::AnsiTextLocator |
+                                 DeviceAttributes::CaptureScreenBuffer |
+                                 DeviceAttributes::Columns132 |
                                  // TODO: DeviceAttributes::NationalReplacementCharacterSets |
                                  DeviceAttributes::RectangularEditing |
                                  // TODO: DeviceAttributes::SelectiveErase |
                                  DeviceAttributes::SixelGraphics |
                                  // TODO: DeviceAttributes::TechnicalCharacters |
                                  DeviceAttributes::UserDefinedKeys);
+    // clang-format on
 
     reply("\033[?{};{}c", id, attrs);
 }

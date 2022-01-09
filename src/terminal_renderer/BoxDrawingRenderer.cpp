@@ -16,6 +16,7 @@
 #include <terminal_renderer/utils.h>
 
 #include <crispy/logstore.h>
+#include <crispy/unreachable.h>
 
 #include <fmt/format.h>
 

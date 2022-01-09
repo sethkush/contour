@@ -346,6 +346,12 @@ constexpr inline auto XTSHIFTESCAPE=detail::CSI('>', 0, 1, std::nullopt, 's', VT
 constexpr inline auto XTVERSION   = detail::CSI('>', 0, 1, std::nullopt, 'q', VTType::VT525 /*Xterm*/, "XTVERSION", "Query terminal name and version");
 constexpr inline auto CAPTURE     = detail::CSI('>', 0, 2, std::nullopt, 't', VTType::VT525 /*Extension*/, "CAPTURE", "Report screen buffer capture.");
 
+// DEC Text Locator extension
+constexpr inline auto DECEFR      = detail::CSI(std::nullopt, 0, 4, '\'', 'w', VTType::VT420 /*Extension*/, "DECEFR", "Enable Filter Rectangle");
+constexpr inline auto DECELR      = detail::CSI(std::nullopt, 0, 2, '\'', 'z', VTType::VT420 /*Extension*/, "DECELR", "Enable Locator Reporting");
+constexpr inline auto DECRQLP     = detail::CSI(std::nullopt, 0, 0, '\'', '|', VTType::VT420 /*Extension*/, "DECRQLP", "Request Locator Position");
+constexpr inline auto DECSLE      = detail::CSI(std::nullopt, 0, 1, '\'', '{', VTType::VT420 /*Extension*/, "DECSLE", "Select Locator Events");
+
 // DCS functions
 constexpr inline auto STP         = detail::DCS(std::nullopt, 0, 0, '$', 'p', VTType::VT525, "STP", "Set Terminal Profile");
 constexpr inline auto DECRQSS     = detail::DCS(std::nullopt, 0, 0, '$', 'q', VTType::VT420, "DECRQSS", "Request Status String");
@@ -445,19 +451,23 @@ inline auto const& functions() noexcept
             DA3,
             DCH,
             DECCRA,
+            DECDC,
+            DECEFR,
+            DECELR,
             DECERA,
             DECFRA,
-            DECDC,
             DECIC,
             DECMODERESTORE,
             DECMODESAVE,
             DECRM,
+            DECRQLP,
             DECRQM,
             DECRQM_ANSI,
             DECRQPSR,
             DECSCL,
             DECSCPP,
             DECSCUSR,
+            DECSLE,
             DECSLRM,
             DECSM,
             DECSNLS,
@@ -484,8 +494,8 @@ inline auto const& functions() noexcept
             TBC,
             VPA,
             WINMANIP,
-            XTSMGRAPHICS,
             XTSHIFTESCAPE,
+            XTSMGRAPHICS,
             XTVERSION,
 
             // DCS

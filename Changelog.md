@@ -12,6 +12,8 @@
 - Fixes `SU` in combination with `DECLRM` (#593).
 - Fixes an assertion in text renderer.
 - Fixes wrongly advertising DEC locator mode (it is not supported).
+- Fixes VT sequence OSC 4's response.
+- Fixes an assertion in text renderer.
 - Improved VT backend performance (#342).
 - Improved text selection behaviour.
 - Improved detection of runtime DPI changes for KDE (Plasma) desktop environment.
@@ -29,6 +31,7 @@
 - Adds `mock` font locator (mostly interesting for advanced use for CI testing).
 - Adds VT sequence `SM ? 8452 h` / `RM ? 8452 l` for enabling/disabling sixel cursor placement conformance (xterm extension).
 - Adds SGR-Pixels support, VT sequence `SM ? 1016 h` / `RM ? 1016 l` (#574).
+- Adds support for DEC text locator extension, `DECSLE`, `DECEFR`, `DECELR`, `DECRQLP`, `DECLRP` (#575).
 
 ### 0.2.3 (2021-12-12)
 

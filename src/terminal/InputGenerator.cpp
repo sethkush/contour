@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #include <terminal/ControlCode.h>
+#include <terminal/DECTextLocator.h>
 #include <terminal/InputGenerator.h>
 #include <terminal/logging.h>
 
@@ -268,6 +269,8 @@ void InputGenerator::reset()
     mouseProtocol_ = std::nullopt;
     mouseTransport_ = MouseTransport::Default;
     mouseWheelMode_ = MouseWheelMode::Default;
+
+    textLocator_.reset();
 
     // pendingSequence_ = {};
     // currentlyPressedMouseButtons_ = {};

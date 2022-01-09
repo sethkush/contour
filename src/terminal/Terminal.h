@@ -363,6 +363,8 @@ class Terminal
     TerminalState<Terminal>& state() noexcept { return state_; }
     TerminalState<Terminal> const& state() const noexcept { return state_; }
 
+    DECTextLocator& textLocator() noexcept { return state_.inputGenerator.textLocator(); }
+
   private:
     void mainLoop();
     void refreshRenderBuffer(RenderBuffer& _output); // <- acquires the lock

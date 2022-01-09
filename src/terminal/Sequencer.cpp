@@ -1566,6 +1566,50 @@ ApplyResult Sequencer<TheTerminal>::apply(FunctionDefinition const& _function, S
         screen().reply(fmt::format("\033P>|{} {}\033\\", LIBTERMINAL_NAME, LIBTERMINAL_VERSION_STRING));
         return ApplyResult::Ok;
 
+    // {{{ DEC text locator
+    case DECELR: {
+        auto& textLocator = terminal_.state().inputGenerator.textLocator();
+        auto const Ps = _seq.param_or<int>(0, 0);
+        auto const Pu = _seq.param_or<int>(1, 0);
+        auto const units = Pu == 1 ? CoordinateUnits::Pixels : CoordinateUnits::Cells;
+        if (Ps == 2)
+            textLocator.enableLocatorReportingOnce(units);
+        else if (Ps == 1)
+            textLocator.enableLocatorReporting(units);
+        else if (Ps == 0)
+            textLocator.disableLocatorReporting();
+        else
+            return ApplyResult::Invalid;
+        return ApplyResult::Ok;
+    }
+    case DECSLE: {
+        auto& textLocator = terminal_.state().inputGenerator.textLocator();
+        auto const Pm = _seq.param_or(0, 0);
+        switch (Pm)
+        {
+        case 0: textLocator.selectLocatorEvents(DECLocatorEvent::Explicit, true); break;
+        case 1: textLocator.selectLocatorEvents(DECLocatorEvent::ButtonDown, true); break;
+        case 2: textLocator.selectLocatorEvents(DECLocatorEvent::ButtonDown, false); break;
+        case 3: textLocator.selectLocatorEvents(DECLocatorEvent::ButtonUp, true); break;
+        case 4: textLocator.selectLocatorEvents(DECLocatorEvent::ButtonUp, false); break;
+        default: return ApplyResult::Invalid;
+        };
+        return ApplyResult::Ok;
+    }
+    case DECRQLP: // TODO(pr)
+        return ApplyResult::Unsupported;
+    case DECEFR: {
+        auto& textLocator = terminal_.state().inputGenerator.textLocator();
+        auto rect = DECLocatorRectangle {};
+        rect.top = Top(_seq.param_or(0, 0));
+        rect.left = Left(_seq.param_or(1, 0));
+        rect.bottom = Bottom(_seq.param_or(2, 0));
+        rect.right = Right(_seq.param_or(3, 0));
+        textLocator.enableFilterRectangle(rect);
+        return ApplyResult::Ok;
+    }
+    // }}}
+
     // OSC
     case SETTITLE:
         //(not supported) ChangeIconTitle(_seq.intermediateCharacters());

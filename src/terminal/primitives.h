@@ -143,6 +143,12 @@ struct MousePixelPosition
     Y y {};
 };
 
+enum class CoordinateUnits
+{
+    Cells,
+    Pixels,
+};
+
 struct [[nodiscard]] CellLocation
 {
     LineOffset line {};
@@ -459,6 +465,35 @@ constexpr ColumnOffset& operator-=(ColumnOffset& a, ColumnCount b) noexcept
     a.value -= b.value;
     return a;
 }
+// }}}
+// {{{ Mouse
+enum class MouseButton
+{
+    None = 0x00,
+    Release = None, // Button was released and/or no button is pressed.
+    Left = 0x01,
+    Right = 0x02,
+    Middle = 0x04,
+    WheelUp = 0x08,
+    WheelDown = 0x10,
+};
+
+std::string to_string(MouseButton _button);
+
+enum class MouseTransport
+{
+    // CSI M Cb Cx Cy, with Cb, Cx, Cy incremented by 0x20
+    Default,
+    // CSI M Cb Coords, with Coords being UTF-8 encoded, Coords is a tuple, each value incremented by 0x20.
+    Extended,
+    // `CSI Cb Cx Cy M` and `CSI Cb Cx Cy m` (button release)
+    SGR,
+    // SGR-Pixels (1016), an xterm extension as of Patch #359 - 2020/08/17
+    // This is just like SGR but reports pixels isntead of ANSI cursor positions.
+    SGRPixels,
+    // `CSI < Cb Cx Cy M` with Cb += 0x20
+    URXVT,
+};
 // }}}
 
 enum class ScreenType
