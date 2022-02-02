@@ -30,6 +30,8 @@
 #include <QtCore/QTimer>
 #include <QtGui/QOpenGLExtraFunctions>
 #include <QtGui/QVector4D>
+#include <QtQuick/QQuickItem>
+
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     #include <QtOpenGLWidgets/QOpenGLWidget>
 #else
@@ -48,27 +50,34 @@
 namespace contour::opengl
 {
 
+class OpenGLRenderer;
+
 // It currently just handles one terminal inside, but ideally later it can handle
 // multiple terminals in tabbed views as well tiled.
-class TerminalWidget: public QOpenGLWidget, public TerminalDisplay, private QOpenGLExtraFunctions
+class TerminalWidget: public QQuickItem, public TerminalDisplay
 {
     Q_OBJECT
+    Q_PROPERTY(QString profile READ profileName WRITE setProfileName NOTIFY profileNameChanged)
+    QML_ELEMENT
 
   public:
-    TerminalWidget(TerminalSession& _session,
+    explicit TerminalWidget(QQuickItem* parent = nullptr);
+
+    TerminalWidget(QQuickItem* parent,
+                   std::chrono::seconds _earlyExitThreshold,
+                   std::string _profileName,
+                   std::string _programPath,
+                   ContourGuiApp& _app,
                    std::function<void()> _adaptSize,
                    std::function<void(bool)> _enableBackgroundBlur);
 
     ~TerminalWidget() override;
 
-    // {{{ OpenGL rendering handling
     static QSurfaceFormat surfaceFormat();
-    QSize minimumSizeHint() const override;
-    QSize sizeHint() const override;
-    void initializeGL() override;
-    void resizeGL(int _width, int _height) override;
-    void paintGL() override;
-    // }}}
+
+    void initializeGL();
+    void resizeGL(int _width, int _height);
+    void paintGL();
 
     // {{{ Input handling
     void keyPressEvent(QKeyEvent* _keyEvent) override;
@@ -127,7 +136,15 @@ class TerminalWidget: public QOpenGLWidget, public TerminalDisplay, private QOpe
     void discardImage(terminal::Image const&) override;
     // }}}
 
+    void releaseResources() override;
+
+    QString profileName() const { return QString::fromStdString(profileName_); }
+    void setProfileName(QString const& name) { profileName_ = name.toStdString(); }
+
   public Q_SLOTS:
+    void handleWindowChanged(QQuickWindow* win);
+    void cleanup();
+
     void onFrameSwapped();
     void onScrollBarValueChanged(int _value);
     void onRefreshRateChanged();
@@ -136,6 +153,7 @@ class TerminalWidget: public QOpenGLWidget, public TerminalDisplay, private QOpe
     void onDpiConfigChanged();
 
   signals:
+    void profileNameChanged();
     void terminalBufferChanged(terminal::ScreenType);
     void terminalBufferUpdated();
     void terminated();
@@ -144,8 +162,9 @@ class TerminalWidget: public QOpenGLWidget, public TerminalDisplay, private QOpe
   private:
     // helper methods
     //
-    config::TerminalProfile const& profile() const noexcept { return session_.profile(); }
-    terminal::Terminal& terminal() noexcept { return session_.terminal(); }
+    void sync();
+    config::TerminalProfile const& profile() const noexcept { return session_->profile(); }
+    terminal::Terminal& terminal() noexcept { return session_->terminal(); }
     void configureScreenHooks();
     void logDisplayInfo();
     void watchKdeDpiSetting();
@@ -173,15 +192,23 @@ class TerminalWidget: public QOpenGLWidget, public TerminalDisplay, private QOpe
         return state_.touch();
     }
 
-    // private data fields
+    // data members
     //
-    TerminalSession& session_;
+    ContourGuiApp& app_;
+    config::Config config_;
+    const bool liveConfig_;
+    std::string profileName_;
+    std::string programPath_;
+    std::unique_ptr<TerminalSession> session_;
+
+    // data fields
+    //
     std::function<void()> adaptSize_;
     std::function<void(bool)> enableBlurBehind_;
     terminal::renderer::Renderer renderer_;
     std::atomic<bool> initialized_ = false;
     bool renderingPressure_ = false;
-    std::unique_ptr<terminal::renderer::RenderTarget> renderTarget_;
+    OpenGLRenderer* renderTarget_ = nullptr;
     PermissionCache rememberedPermissions_ {};
     bool maximizedState_ = false;
 

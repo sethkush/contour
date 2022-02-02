@@ -13,7 +13,6 @@
  */
 #include <contour/Config.h>
 #include <contour/ContourGuiApp.h>
-#include <contour/TerminalWindow.h>
 #include <contour/opengl/TerminalWidget.h>
 
 #include <terminal/pty/PtyProcess.h>
@@ -24,7 +23,10 @@
 
 #include <QtCore/QProcess>
 #include <QtGui/QSurfaceFormat>
+#include <QtQml/QQmlApplicationEngine>
 #include <QtWidgets/QApplication>
+
+#include <QDirIterator>
 
 #include <iostream>
 #include <vector>
@@ -324,12 +326,14 @@ int ContourGuiApp::terminalGuiAction()
     // auto const TBC = "\033[g";
     // printf("\r%s        %s                        %s\r", TBC, HTS, HTS);
 
+    qmlRegisterType<opengl::TerminalWidget>("Contour.Terminal", 1, 0, "ContourTerminal");
+
+    qmlEngine_ = make_unique<QQmlApplicationEngine>();
+
     // Spawn initial window.
     newWindow();
 
     auto rv = app.exec();
-
-    terminalWindows_.clear();
 
     if (exitStatus_.has_value())
     {
@@ -343,13 +347,13 @@ int ContourGuiApp::terminalGuiAction()
     return rv;
 }
 
-TerminalWindow* ContourGuiApp::newWindow(contour::config::Config const& _config)
+void ContourGuiApp::newWindow(contour::config::Config const& _config)
 {
-    auto const liveConfig = parameters().get<bool>("contour.terminal.live-config");
+#if 0 // TODO(pr)
     auto mainWindow =
         make_unique<TerminalWindow>(earlyExitThreshold(),
                                     _config,
-                                    liveConfig,
+                                    liveConfig(),
                                     profileName(),
                                     config_.profile(profileName())->shell.workingDirectory.string(),
                                     *this);
@@ -363,17 +367,28 @@ TerminalWindow* ContourGuiApp::newWindow(contour::config::Config const& _config)
     //                  this, &ContourGuiApp::showNotification);
 
     return terminalWindows_.back().get();
+#endif
 }
 
-TerminalWindow* ContourGuiApp::newWindow()
+void ContourGuiApp::newWindow()
 {
-    auto const liveConfig = parameters().get<bool>("contour.terminal.live-config");
+    LOGSTORE(DisplayLog)("creating window");
+    qmlEngine_->load(QUrl("qrc:/contour/main.qml"));
+
+#if 0 // TODO(pr)
     auto mainWindow = make_unique<TerminalWindow>(
-        earlyExitThreshold(), config_, liveConfig, profileName(), argv_[0], *this);
+        earlyExitThreshold(), config_, liveConfig(), profileName(), argv_[0], *this);
     mainWindow->show();
+
+    // QDirIterator it(":", QDirIterator::Subdirectories);
+    // while (it.hasNext()) {
+    //     fmt::print("dir iter: {}\n", it.fileName().toStdString());
+    //     it.next();
+    // }
 
     terminalWindows_.emplace_back(move(mainWindow));
     return terminalWindows_.back().get();
+#endif
 }
 
 void ContourGuiApp::showNotification(std::string_view _title, std::string_view _content)

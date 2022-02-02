@@ -85,7 +85,6 @@ TerminalSession::TerminalSession(unique_ptr<Pty> _pty,
                                  string _profileName,
                                  string _programPath,
                                  ContourGuiApp& _app,
-                                 unique_ptr<TerminalDisplay> _display,
                                  std::function<void()> _displayInitialized,
                                  std::function<void()> _onExit):
     startTime_ { steady_clock::now() },
@@ -111,9 +110,9 @@ TerminalSession::TerminalSession(unique_ptr<Pty> _pty,
                 config_.maxImageColorRegisters,
                 config_.sixelCursorConformance,
                 profile_.colors,
-                _display ? _display->refreshRate() : 50.0,
+                50.0,
                 config_.reflowOnResize },
-    display_ { move(_display) }
+    display_ { nullptr }
 {
     if (_liveConfig)
     {
@@ -130,14 +129,12 @@ TerminalSession::TerminalSession(unique_ptr<Pty> _pty,
 
 TerminalSession::~TerminalSession()
 {
-    (void)
-        display_.release(); // TODO: due to Qt, this is currently not owned by us. That's sad, or is it not?
 }
 
-void TerminalSession::setDisplay(unique_ptr<TerminalDisplay> _display)
+void TerminalSession::setDisplay(TerminalDisplay* _display)
 {
     LOGSTORE(SessionLog)("Assigning display.");
-    display_ = move(_display);
+    display_ = _display;
 
     // XXX find better way (dpi)
     sanitizeConfig(config_);
@@ -147,6 +144,8 @@ void TerminalSession::setDisplay(unique_ptr<TerminalDisplay> _display)
     auto const pixels =
         ImageSize { display_->cellSize().width * boxed_cast<Width>(terminal_.screenSize().columns),
                     display_->cellSize().height * boxed_cast<Height>(terminal_.screenSize().lines) };
+
+    terminal_.setRefreshRate(display_->refreshRate());
     terminal_.resizeScreen(terminal_.screenSize(), pixels);
 }
 
@@ -182,6 +181,7 @@ void TerminalSession::bell()
 
 void TerminalSession::bufferChanged(terminal::ScreenType _type)
 {
+    Require(display_);
     display_->post([this, _type]() { display_->bufferChanged(_type); });
 }
 

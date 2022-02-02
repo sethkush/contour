@@ -18,6 +18,8 @@
 
 #include <terminal/Process.h>
 
+#include <QtQml/QQmlApplicationEngine>
+
 #include <list>
 #include <memory>
 #include <optional>
@@ -41,11 +43,13 @@ class ContourGuiApp: public ContourApp
     ContourGuiApp();
     ~ContourGuiApp() override;
 
+    static ContourGuiApp* instance() { return static_cast<ContourGuiApp*>(ContourApp::instance()); }
+
     int run(int argc, char const* argv[]) override;
     crispy::cli::Command parameterDefinition() const override;
 
-    TerminalWindow* newWindow();
-    TerminalWindow* newWindow(contour::config::Config const& _config);
+    void newWindow();
+    void newWindow(contour::config::Config const& _config);
     void showNotification(std::string_view _title, std::string_view _content);
 
     std::string profileName() const;
@@ -55,6 +59,10 @@ class ContourGuiApp: public ContourApp
     std::optional<FileSystem::path> dumpStateAtExit() const;
 
     void onExit(TerminalSession& _session);
+
+    config::Config& config() noexcept { return config_; }
+
+    bool liveConfig() const noexcept { return parameters().get<bool>("contour.terminal.live-config"); }
 
   private:
     bool loadConfig(std::string const& target);
@@ -67,7 +75,7 @@ class ContourGuiApp: public ContourApp
     char const** argv_ = nullptr;
     std::optional<terminal::Process::ExitStatus> exitStatus_;
 
-    std::list<std::unique_ptr<TerminalWindow>> terminalWindows_;
+    std::unique_ptr<QQmlApplicationEngine> qmlEngine_;
 };
 
 } // namespace contour

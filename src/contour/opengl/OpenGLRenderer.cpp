@@ -169,26 +169,7 @@ OpenGLRenderer::OpenGLRenderer(ShaderConfig const& textShaderConfig,
     _rectShader { createShader(rectShaderConfig) },
     _rectProjectionLocation { _rectShader->uniformLocation("u_projection") }
 {
-    initialize();
-
-    setRenderSize(targetSurfaceSize);
-
-    assert(_textProjectionLocation != -1);
-
-    CHECKED_GL(glEnable(GL_BLEND));
-    CHECKED_GL(glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE));
-    // glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
-    //  //glBlendFunc(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR);
-
-    bound(*_textShader, [&]() {
-        CHECKED_GL(_textShader->setUniformValue("fs_textureAtlas", 0)); // GL_TEXTURE0?
-        auto const textureAtlasWidth = unbox<GLfloat>(_textureAtlas.textureSize.width);
-        CHECKED_GL(_textShader->setUniformValue("pixel_x", 1.0f / textureAtlasWidth));
-    });
-
-    initializeBackgroundRendering();
-    initializeRectRendering();
-    initializeTextureRendering();
+    initializeOpenGLFunctions();
 }
 
 void OpenGLRenderer::setRenderSize(ImageSize targetSurfaceSize)
@@ -280,11 +261,32 @@ OpenGLRenderer::~OpenGLRenderer()
 
 void OpenGLRenderer::initialize()
 {
-    if (!_initialized)
-    {
-        _initialized = true;
-        initializeOpenGLFunctions();
-    }
+    LOGSTORE(DisplayLog)("OpenGLRenderer: initializing");
+    //initializeOpenGLFunctions();
+
+    setRenderSize(_renderTargetSize);
+
+    assert(_textProjectionLocation != -1);
+
+    CHECKED_GL(glEnable(GL_BLEND));
+    CHECKED_GL(glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE));
+    // glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ZERO, GL_ONE);
+    // // glBlendFunc(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR);
+
+    bound(*_textShader, [&]() {
+        CHECKED_GL(_textShader->setUniformValue("fs_textureAtlas", 0)); // GL_TEXTURE0?
+        auto const textureAtlasWidth = unbox<GLfloat>(_textureAtlas.textureSize.width);
+        CHECKED_GL(_textShader->setUniformValue("pixel_x", 1.0f / textureAtlasWidth));
+    });
+
+    initializeRectRendering();
+    initializeTextureRendering();
+    initializeBackgroundRendering();
+}
+
+void OpenGLRenderer::paint() // TODO(pr)
+{
+    LOGSTORE(DisplayLog)("OpenGLRenderer: paint");
 }
 
 void OpenGLRenderer::clearCache()
@@ -293,8 +295,6 @@ void OpenGLRenderer::clearCache()
 
 int OpenGLRenderer::maxTextureDepth()
 {
-    initialize();
-
     GLint value = {};
     CHECKED_GL(glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &value));
     return static_cast<int>(value);
@@ -302,8 +302,6 @@ int OpenGLRenderer::maxTextureDepth()
 
 int OpenGLRenderer::maxTextureSize()
 {
-    initialize();
-
     GLint value = {};
     CHECKED_GL(glGetIntegerv(GL_MAX_TEXTURE_SIZE, &value));
     return static_cast<int>(value);

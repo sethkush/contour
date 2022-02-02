@@ -54,7 +54,6 @@ class TerminalSession: public terminal::Terminal::Events
                     std::string _profileName,
                     std::string _programPath,
                     ContourGuiApp& _app,
-                    std::unique_ptr<TerminalDisplay> _display,
                     std::function<void()> _displayInitialized,
                     std::function<void()> _onExit);
     ~TerminalSession();
@@ -73,9 +72,9 @@ class TerminalSession: public terminal::Terminal::Events
     terminal::Terminal const& terminal() const noexcept { return terminal_; }
     terminal::ScreenType currentScreenType() const noexcept { return currentScreenType_; }
 
-    TerminalDisplay* display() noexcept { return display_.get(); }
-    TerminalDisplay const* display() const noexcept { return display_.get(); }
-    void setDisplay(std::unique_ptr<TerminalDisplay> _display);
+    TerminalDisplay* display() noexcept { return display_; }
+    TerminalDisplay const* display() const noexcept { return display_; }
+    void setDisplay(TerminalDisplay* _display);
     void displayInitialized();
 
     // Terminal::Events
@@ -199,7 +198,7 @@ class TerminalSession: public terminal::Terminal::Events
     std::unique_ptr<terminal::Pty> pty_;
     terminal::Terminal terminal_;
     bool terminatedAndWaitingForKeyPress_ = false;
-    std::unique_ptr<TerminalDisplay> display_;
+    TerminalDisplay* display_ = nullptr;
 
     std::optional<FileChangeWatcher> configFileChangeWatcher_;
 

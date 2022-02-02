@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/contour">
+        <file>main.qml</file>
+        <file>contour.yml</file>
+    </qresource>
+</RCC>

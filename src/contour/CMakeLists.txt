@@ -14,7 +14,7 @@ if(CONTOUR_BUILD_WITH_QT6)
    find_package(Qt6 COMPONENTS Core Gui Network OpenGL OpenGLWidgets Widgets REQUIRED)
    set(CONTOUR_BLUR_PLATFORM_KWIN OFF)
 else()
-   find_package(Qt5 COMPONENTS Gui Network Widgets REQUIRED)  # apt install qtbase5-dev libqt5gui5
+   find_package(Qt5 COMPONENTS Gui Network Widgets Qml Quick REQUIRED)  # apt install qtbase5-dev libqt5gui5
 endif()
 
 # OpenGL accelerated TerminalDisplay
@@ -49,9 +49,7 @@ if(CONTOUR_FRONTEND_GUI)
         ContourApp.cpp ContourApp.h
         ContourGuiApp.cpp ContourGuiApp.h
         FileChangeWatcher.cpp FileChangeWatcher.h
-        ScrollableDisplay.cpp ScrollableDisplay.h
         TerminalSession.cpp TerminalSession.h
-        TerminalWindow.cpp TerminalWindow.h
         helper.cpp helper.h
     )
 endif()
@@ -60,7 +58,8 @@ if(WIN32)
     list(APPEND contour_SRCS contour.rc)
 endif()
 
-add_executable(contour ${contour_SRCS})
+qt5_add_resources(QT_RESOURCES contour.qrc)
+add_executable(contour ${contour_SRCS} ${QT_RESOURCES})
 target_include_directories(contour PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_definitions(contour PRIVATE
     CONTOUR_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
@@ -70,6 +69,8 @@ target_compile_definitions(contour PRIVATE
     CONTOUR_PROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
 )
 set_target_properties(contour PROPERTIES AUTOMOC ON)
+set_target_properties(contour PROPERTIES AUTORCC ON)
+set_target_properties(contour PROPERTIES AUTOUIC ON)
 
 if(CONTOUR_PERF_STATS)
     target_compile_definitions(contour PRIVATE CONTOUR_PERF_STATS)
@@ -125,9 +126,9 @@ endif()
 
 if(CONTOUR_FRONTEND_GUI)
     if(CONTOUR_BUILD_WITH_QT6)
-        target_link_libraries(contour contour_frontend_opengl terminal_renderer Qt6::Core Qt6::Network Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Widgets)
+        target_link_libraries(contour contour_frontend_opengl terminal_renderer Qt6::Core Qt6::Network Qt6::OpenGL Qt6::OpenGLWidgets Qt6::Widgets Qt6::Qml Qt6::Quick)
     else()
-        target_link_libraries(contour contour_frontend_opengl terminal_renderer Qt5::Gui Qt5::Network Qt5::Widgets)
+        target_link_libraries(contour contour_frontend_opengl terminal_renderer Qt5::Gui Qt5::Network Qt5::Widgets Qt5::Qml Qt5::Quick)
     endif()
     if(CONTOUR_BLUR_PLATFORM_KWIN) # TODO: auto-enable on Linux, if KDE dev libs were found.
         target_compile_definitions(contour PRIVATE CONTOUR_BLUR_PLATFORM_KWIN)

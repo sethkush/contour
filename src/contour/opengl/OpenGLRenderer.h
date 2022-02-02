@@ -34,10 +34,13 @@ namespace contour::opengl
 struct ShaderConfig;
 
 class OpenGLRenderer final:
+    public QObject,
     public terminal::renderer::RenderTarget,
     public terminal::renderer::atlas::AtlasBackend,
     public QOpenGLExtraFunctions
 {
+    Q_OBJECT
+
     using ImageSize = terminal::ImageSize;
 
     using AtlasTextureScreenshot = terminal::renderer::AtlasTextureScreenshot;
@@ -87,10 +90,13 @@ class OpenGLRenderer final:
 
     void inspect(std::ostream& output) const override;
 
+  public Q_SLOTS:
+    void initialize();
+    void paint();
+
   private:
     // private helper methods
     //
-    void initialize();
     void initializeBackgroundRendering();
     void initializeTextureRendering();
     void initializeRectRendering();
