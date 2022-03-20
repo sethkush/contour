@@ -132,6 +132,8 @@ class TerminalWidget: public QOpenGLWidget, public TerminalDisplay, private QOpe
     void discardImage(terminal::Image const&) override;
     // }}}
 
+    std::optional<terminal::Image> decodeImage(crispy::span<uint8_t> _imageData);
+
   public Q_SLOTS:
     void onFrameSwapped();
     void onScrollBarValueChanged(int _value);

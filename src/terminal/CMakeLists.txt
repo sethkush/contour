@@ -35,6 +35,7 @@ set(terminal_HEADERS
     InputGenerator.h
     Line.h
     MatchModes.h
+    MessageParser.h
     MockTerm.h
     Parser.h
     Process.h
@@ -77,6 +78,7 @@ set(terminal_SOURCES
     InputGenerator.cpp
     Line.cpp
     MatchModes.cpp
+    MessageParser.cpp
     MockTerm.cpp
     Parser.cpp
     Process${PLATFORM_SUFFIX}.cpp
@@ -145,6 +147,7 @@ if(LIBTERMINAL_TESTING)
         Functions_test.cpp
         Grid_test.cpp
         Line_test.cpp
+        MessageParser_test.cpp
         Parser_test.cpp
         Screen_test.cpp
         Sequence_test.cpp

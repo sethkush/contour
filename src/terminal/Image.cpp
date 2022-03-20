@@ -150,9 +150,9 @@ shared_ptr<RasterizedImage> ImagePool::rasterize(shared_ptr<Image const> _image,
         move(_image), _alignmentPolicy, _resizePolicy, _defaultColor, _cellSpan, _cellSize);
 }
 
-void ImagePool::link(string const& _name, shared_ptr<Image const> _imageRef)
+void ImagePool::link(string _name, shared_ptr<Image const> _imageRef)
 {
-    imageNameToImageCache_.emplace(_name, move(_imageRef));
+    imageNameToImageCache_.emplace(move(_name), move(_imageRef));
 }
 
 shared_ptr<Image const> ImagePool::findImageByName(string const& _name) const noexcept
