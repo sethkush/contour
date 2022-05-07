@@ -1544,6 +1544,8 @@ TerminalProfile loadTerminalProfile(UsedKeys& _usedKeys,
         }
     }
 
+    tryLoadChildRelative(_usedKeys, _profile, basePath, "session_resume", profile.sessionResume);
+    // fmt::print("{}\n", profile.sessionResume);
     return profile;
 }
 

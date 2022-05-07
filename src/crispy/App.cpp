@@ -91,21 +91,6 @@ unsigned screenWidth()
     return DefaultWidth;
 }
 
-FileSystem::path xdgStateHome()
-{
-    if (auto const* p = getenv("XDG_STATE_HOME"); p && *p)
-        return FileSystem::path(p);
-
-#if defined(_WIN32)
-    if (auto const* p = getenv("LOCALAPPDATA"); p && *p)
-        return FileSystem::path(p);
-#else
-    if (passwd const* pw = getpwuid(getuid()); pw && pw->pw_dir)
-        return FileSystem::path(pw->pw_dir) / ".local" / "state";
-#endif
-
-    return FileSystem::temp_directory_path();
-}
 } // namespace
 
 namespace crispy
@@ -221,7 +206,6 @@ int App::run(int argc, char const* argv[])
         customizeLogStoreOutput();
 
         syntax_ = parameterDefinition();
-
         optional<CLI::FlagStore> flagsOpt = CLI::parse(syntax_.value(), argc, argv);
         if (!flagsOpt.has_value())
         {
@@ -229,7 +213,6 @@ int App::run(int argc, char const* argv[])
             return EXIT_FAILURE;
         }
         flags_ = std::move(flagsOpt.value());
-
         // std::cout << fmt::format("Flags: {}\n", parameters().values.size());
         // for (auto const & [k, v] : parameters().values)
         //     std::cout << fmt::format(" - {}: {}\n", k, v);

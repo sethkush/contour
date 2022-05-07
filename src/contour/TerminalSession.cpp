@@ -15,13 +15,18 @@
 #include <contour/TerminalSession.h>
 #include <contour/helper.h>
 
+#include <terminal/Grid.h>
 #include <terminal/MatchModes.h>
 #include <terminal/Process.h>
 #include <terminal/Terminal.h>
+#include <terminal/VTWriter.h>
 #include <terminal/ViCommands.h>
+#include <terminal/logging.h>
 #include <terminal/pty/Pty.h>
 
 #include <crispy/StackTrace.h>
+#include <crispy/stdfs.h>
+#include <crispy/utils.h>
 
 #include <range/v3/all.hpp>
 
@@ -85,6 +90,17 @@ namespace
         pthread_setname_np(pthread_self(), name);
 #endif
     }
+
+    [[maybe_unused]] QStringList createCorrectRestartCommands(QStringList const& defaultCommands,
+                                                              QString const& sessionId)
+    {
+        QStringList newCommands;
+        auto contourBinaryPath = defaultCommands[0].toStdString();
+        newCommands.append(FileSystem::absolute(contourBinaryPath).string().c_str());
+        newCommands.append("session");
+        newCommands.append(sessionId);
+        return newCommands;
+    }
 } // namespace
 
 TerminalSession::TerminalSession(unique_ptr<Pty> _pty,
@@ -137,6 +153,15 @@ TerminalSession::TerminalSession(unique_ptr<Pty> _pty,
     }
 
     profile_ = *config_.profile(profileName_); // XXX do it again. but we've to be more efficient here
+    if (profile().sessionResume)
+    {
+        QGuiApplication::setFallbackSessionManagementEnabled(false);
+        connect(qApp,
+                &QGuiApplication::commitDataRequest,
+                this,
+                &TerminalSession::commitSession,
+                Qt::DirectConnection);
+    }
     configureTerminal();
 }
 
@@ -392,6 +417,20 @@ void TerminalSession::pasteFromClipboard(unsigned count)
     }
     else
         SessionLog()("Could not access clipboard.");
+}
+
+std::string TerminalSession::serializeGridBuffer()
+{
+    const auto& grid = terminal().primaryScreen().grid();
+    auto result = std::stringstream {};
+    auto writer = VTWriter(result);
+    for (int const line:
+         ranges::views::iota(-unbox<int>(grid.historyLineCount()), unbox<int>(grid.pageSize().lines)))
+    {
+        writer.write(grid.lineAt(LineOffset(line)));
+        writer.crlf();
+    }
+    return result.str();
 }
 
 void TerminalSession::onSelectionCompleted()
@@ -1192,6 +1231,24 @@ void TerminalSession::onConfigReload()
                 SIGNAL(fileChanged(const QString&)),
                 this,
                 SLOT(onConfigReload()));
+}
+
+void TerminalSession::commitSession(QSessionManager& manager)
+{
+    auto const sessionFile =
+        crispy::App::instance()->localStateDir() / (manager.sessionId().toStdString() + ".session");
+    std::ofstream file(sessionFile.string(), std::ios::trunc);
+
+    if (!file.is_open())
+        TerminalLog()("Failed to open session file: {}", sessionFile.string());
+    else
+    {
+        auto const configPath = FileSystem::absolute(config().backingFilePath).string();
+        auto const gridData = serializeGridBuffer();
+        file << configPath << "\n";
+        file << profileName_ << "\n";
+        file << gridData;
+    }
 }
 
 // }}}

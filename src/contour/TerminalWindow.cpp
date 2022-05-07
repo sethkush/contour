@@ -17,6 +17,7 @@
 #include <contour/TerminalWindow.h>
 #include <contour/helper.h>
 
+#include <crispy/utils.h>
 #if defined(CONTOUR_SCROLLBAR)
     #include <contour/ScrollableDisplay.h>
 #endif
@@ -45,6 +46,8 @@
     #include <KWindowEffects>
 #endif
 
+#include <terminal/logging.h>
+
 #include <cstring>
 #include <fstream>
 #include <stdexcept>
@@ -67,6 +70,34 @@ namespace contour
 
 using actions::Action;
 
+struct SessionState
+{
+    std::string configPath;
+    std::string profileName;
+    std::string gridBuffer;
+};
+
+namespace
+{
+    SessionState loadSessionFile(FileSystem::path sessionFilePath)
+    {
+        auto sessionFile = std::ifstream(sessionFilePath.string());
+        auto state = SessionState {};
+        if (!sessionFile.is_open())
+        {
+            terminal::TerminalLog()("Failed to read session file: {}", sessionFilePath.string());
+            return state;
+        }
+        sessionFile.unsetf(std::ios::skipws);
+        std::getline(sessionFile, state.configPath);
+        std::getline(sessionFile, state.profileName);
+        std::copy(std::istream_iterator<char>(sessionFile),
+                  std::istream_iterator<char>(),
+                  std::back_inserter(state.gridBuffer));
+        return state;
+    }
+} // namespace
+
 TerminalWindow::TerminalWindow(std::chrono::seconds _earlyExitThreshold,
                                config::Config _config,
                                bool _liveConfig,
@@ -86,6 +117,24 @@ TerminalWindow::TerminalWindow(std::chrono::seconds _earlyExitThreshold,
     // backgroundColor.setAlphaF(0.3);
     // p.setColor(QPalette::Window, backgroundColor);
     // setPalette(p);
+
+    std::string _gridBuffer;
+    if (profile().sessionResume && qApp->isSessionRestored())
+    {
+        auto const sessionFilePath =
+            crispy::App::instance()->localStateDir()
+            / (app_.parameters().get<std::string>("contour.terminal.session") + ".session");
+        auto const [configPath, profile, gridBuffer] = loadSessionFile(sessionFilePath);
+        if (!configPath.empty() && !profile.empty())
+        {
+            config_ = contour::config::loadConfigFromFile(configPath);
+            profileName_ = profile;
+            _gridBuffer = gridBuffer;
+        }
+        if (!FileSystem::remove(sessionFilePath))
+            terminal::TerminalLog()("Failed to delete session file {}, file does not exist",
+                                    sessionFilePath.string());
+    }
 
     setAttribute(Qt::WA_TranslucentBackground);
     setAttribute(Qt::WA_NoSystemBackground, false);
@@ -139,6 +188,8 @@ TerminalWindow::TerminalWindow(std::chrono::seconds _earlyExitThreshold,
 #endif
         },
         [this]() { app_.onExit(*terminalSession_); });
+    if (qApp->isSessionRestored())
+        terminalSession_->terminal().writeToScreen(_gridBuffer);
 
     terminalSession_->setDisplay(make_unique<opengl::TerminalWidget>(
         *terminalSession_,

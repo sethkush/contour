@@ -24,6 +24,7 @@
 
 #include <QtCore/QFileSystemWatcher>
 
+#include <QSessionManager>
 #include <functional>
 #include <thread>
 
@@ -173,6 +174,8 @@ class TerminalSession: public QObject, public terminal::Terminal::Events
             display_->scheduleRedraw();
     }
 
+    std::string serializeGridBuffer();
+
     ContourGuiApp& app() noexcept { return app_; }
 
     std::chrono::steady_clock::time_point startTime() const noexcept { return startTime_; }
@@ -208,6 +211,7 @@ class TerminalSession: public QObject, public terminal::Terminal::Events
     uint8_t matchModeFlags() const;
     void flushInput();
     void mainLoop();
+    void commitSession(QSessionManager& manager);
 
     // private data
     //

@@ -45,6 +45,25 @@ using namespace std::string_literals;
 
 namespace CLI = crispy::cli;
 
+namespace
+{
+std::vector<std::string> getSessions()
+{
+    std::vector<std::string> sessionFiles;
+    for (auto dirContents: FileSystem::directory_iterator(crispy::App::instance()->localStateDir()))
+    {
+        // NB: Cannot use  dirContents.is_regular_file() here,
+        // because on OS/X, boost::filesystem is used, and that doesn't have that yet.
+        bool const isRegularFile = dirContents.status().type() == FileSystem::file_type::regular;
+        if (isRegularFile && dirContents.path().extension() == ".session")
+        {
+            sessionFiles.emplace_back(dirContents.path().string());
+        }
+    }
+    return sessionFiles;
+}
+} // namespace
+
 namespace contour
 {
 
@@ -273,6 +292,22 @@ int ContourGuiApp::fontConfigAction()
 
 int ContourGuiApp::terminalGuiAction()
 {
+    if (auto givenSessionId = parameters().get<std::string>("contour.terminal.session");
+        givenSessionId.empty())
+    {
+        auto sessions = getSessions();
+        for (const auto& session: sessions)
+        {
+            auto sessionId = session.substr(0, session.find_last_of('.'));
+            QString const program = QString::fromUtf8(this->argv_[0]);
+            QStringList args;
+            args << "session" << QString::fromStdString(sessionId);
+            QProcess::startDetached(program, args);
+        }
+        if (!sessions.empty())
+            return 0;
+    }
+
     if (!loadConfig("terminal"))
         return EXIT_FAILURE;
 
