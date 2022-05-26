@@ -98,6 +98,11 @@ namespace // {{{ helper
     std::string vtSequenceParameterString(GraphicsAttributes const& _sgr)
     {
         std::string output;
+        // TODO(pr) use VTWriter here instead
+        // std::stringstream os;
+        // auto vtWriter = VTWriter(os);
+        // vtWriter.setForegroundColor(_sgr.foregroundColor);
+        // vtWriter.setBackgroundColor(_sgr.backgroundColor);
 
         auto const sgrSep = [&]() {
             if (!output.empty())
@@ -300,8 +305,17 @@ string_view Screen<Cell, TheScreenType>::tryEmplaceChars(string_view _chars, siz
     {
         if (currentLine().empty())
         {
+#if defined(LIBTERMINAL_SCAN_UNICODE)
+            assert(cellCount <= static_cast<size_t>(columnsAvailable));
+#endif
             _chars.remove_prefix(emplaceCharsIntoCurrentLine(_chars, cellCount));
+#if !defined(LIBTERMINAL_SCAN_UNICODE)
             _chars = tryEmplaceContinuousChars(_chars, cellCount);
+#else
+            if (!_chars.empty())
+                fmt::print("about to fail with #{}: \"{}\"\n", _chars.size(), _chars);
+            assert(_chars.empty());
+#endif
             _terminal.currentPtyBuffer()->advanceHotEndUntil(_chars.data());
             return _chars;
         }
@@ -411,6 +425,7 @@ bool Screen<Cell, TheScreenType>::canResumeEmplace(std::string_view continuation
 template <typename Cell, ScreenType TheScreenType>
 void Screen<Cell, TheScreenType>::writeText(string_view _chars, size_t cellCount)
 {
+    // fmt::print("Screen.writeText: cellCount={}/{}, \"{}\"\n", cellCount, _chars.size(), _chars);
 #if defined(LIBTERMINAL_LOG_TRACE)
     if (VTTraceSequenceLog)
         VTTraceSequenceLog()("text({} bytes): \"{}\"", _chars.size(), _chars);

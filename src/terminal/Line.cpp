@@ -148,7 +148,10 @@ InflatedLineBuffer<Cell> inflate(TriviallyStyledLineBuffer const& input)
 
     auto columns = InflatedLineBuffer<Cell> {};
     columns.reserve(unbox<size_t>(input.displayWidth));
-    // fmt::print("Inflating {}/{}\n", input.text.size(), input.displayWidth);
+    // fmt::print("Inflating {} bytes, {} used columns, {} total columns\n",
+    //            input.text.size(),
+    //            input.usedColumns,
+    //            input.displayWidth);
 
     auto lastChar = char32_t { 0 };
     auto utf8DecoderState = unicode::utf8_decoder_state {};
@@ -167,12 +170,14 @@ InflatedLineBuffer<Cell> inflate(TriviallyStyledLineBuffer const& input)
 
         if (!lastChar || isAsciiBreakable || unicode::grapheme_segmenter::breakable(lastChar, nextChar))
         {
+            // fmt::print("inflate: new column: U+{:X}\n", unsigned(nextChar));
             columns.emplace_back(Cell {});
             columns.back().setHyperlink(input.hyperlink);
             columns.back().write(input.attributes, nextChar, static_cast<uint8_t>(unicode::width(nextChar)));
         }
         else
         {
+            // fmt::print("inflate: append column: U+{:X}\n", unsigned(nextChar));
             Cell& prevCell = columns.back();
             auto const extendedWidth = prevCell.appendCharacter(nextChar);
             if (extendedWidth > 0)

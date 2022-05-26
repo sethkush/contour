@@ -16,6 +16,9 @@ option(LIBTERMINAL_PASSIVE_RENDER_BUFFER_UPDATE "Updates the render buffer withi
 # in terminal grid lines buffer.
 option(LIBTERMINAL_PTY_BUFFER_OBJECTS "PTY Buffer Objects storage [default: ON]" ON)
 
+# EXPERIMENTAL
+option(LIBTERMINAL_SCAN_UNICODE "EXPERIMENTAL: Enables optimization on arbitrary Unicode text chunks." OFF)
+
 if(MSVC)
     add_definitions(-DNOMINMAX)
 endif()
@@ -131,6 +134,10 @@ target_compile_definitions(terminal PRIVATE
 
 if(LIBTERMINAL_PTY_BUFFER_OBJECTS)
     target_compile_definitions(terminal PUBLIC LIBTERMINAL_PTY_BUFFER_OBJECTS=1)
+endif()
+
+if(LIBTERMINAL_SCAN_UNICODE)
+    target_compile_definitions(terminal PUBLIC LIBTERMINAL_SCAN_UNICODE=1)
 endif()
 
 target_include_directories(terminal PUBLIC ${PROJECT_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/src)

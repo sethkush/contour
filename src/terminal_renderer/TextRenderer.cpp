@@ -146,6 +146,7 @@ Making use of reserved glyph slots
 #include <crispy/range.h>
 
 #include <unicode/convert.h>
+#include <unicode/utf8_grapheme_segmenter.h>
 
 #include <fmt/core.h>
 #include <fmt/ostream.h>
@@ -401,6 +402,30 @@ void TextRenderer::beginFrame()
     textClusterGroup_.color = DefaultColor;
 }
 
+void TextRenderer::renderLine(RenderLine const& renderLine)
+{
+    if (renderLine.text.empty())
+        return;
+
+    auto const textStyle = makeTextStyle(renderLine.flags);
+
+    auto graphemeClusterSegmenter = unicode::utf8_grapheme_segmenter(renderLine.text);
+    auto columnOffset = ColumnOffset(0);
+
+    textClusterGroup_.initialPenPosition =
+        _gridMetrics.map(CellLocation { renderLine.lineOffset, columnOffset });
+
+    for (u32string const& graphemeCluster: graphemeClusterSegmenter)
+    {
+        auto const gridPosition = CellLocation { renderLine.lineOffset, columnOffset };
+        renderCell(gridPosition, graphemeCluster, textStyle, renderLine.foregroundColor);
+
+        auto const width =
+            static_cast<uint8_t>(unicode::width(graphemeCluster.front())); // TODO(pr): respect U+FEOF
+        columnOffset += ColumnOffset::cast_from(width);
+    }
+    flushTextClusterGroup();
+}
 
 void TextRenderer::renderCell(RenderCell const& cell)
 {

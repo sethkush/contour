@@ -28,6 +28,15 @@ namespace terminal::parser
 namespace detail
 {
     constexpr uint8_t operator"" _b(unsigned long long _value) { return static_cast<uint8_t>(_value); }
+
+    constexpr bool isVtTextOptimizationEnabled() noexcept
+    {
+#if defined(LIBTERMINAL_SCAN_UNICODE)
+        return true;
+#else
+        return false;
+#endif
+    }
 } // namespace detail
 
 constexpr ParserTable ParserTable::get() // {{{
@@ -237,13 +246,16 @@ void Parser<EventListener, TraceStateChanges>::parseFragment(std::string_view co
         if (state_ == State::Ground)
         {
             auto const chunk = std::string_view(input, static_cast<size_t>(std::distance(input, end)));
-#if defined(LIBTERMINAL_LOG_TRACE)
-            if (VTTraceParserLog)
-                VTTraceParserLog()("scan_for_text(max={}, data=\"{}\")", maxCharCount, crispy::escape(chunk));
-#endif
+
+#if defined(LIBTERMINAL_SCAN_UNICODE)
+            if (auto const [cellCount, next] = unicode::scan_for_text(chunk, maxCharCount); cellCount > 0)
+            {
+#else
             if (auto const cellCount = unicode::scan_for_text_ascii(chunk, maxCharCount); cellCount > 0)
             {
                 auto const next = input + cellCount;
+#endif
+
                 auto const byteCount = static_cast<size_t>(std::distance(input, next));
                 assert(byteCount <= chunk.size());
                 assert(cellCount <= maxCharCount);
@@ -253,7 +265,7 @@ void Parser<EventListener, TraceStateChanges>::parseFragment(std::string_view co
                 if (VTTraceParserLog)
                     VTTraceParserLog()(
                         "[{}] Scanned text: cap {}; available cells {}; chars {}; bytes {}; \"{}\"",
-                        "US-ASCII",
+                        detail::isVtTextOptimizationEnabled() ? "Unicode" : "US-ASCII",
                         chunk.size(),
                         maxCharCount,
                         cellCount,
