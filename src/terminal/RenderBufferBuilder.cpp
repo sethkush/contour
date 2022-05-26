@@ -3,6 +3,9 @@
 #include <terminal/ColorPalette.h>
 #include <terminal/RenderBufferBuilder.h>
 
+#include <unicode/convert.h>
+#include <unicode/utf8_grapheme_segmenter.h>
+
 #include <tuple>
 
 using namespace std;
@@ -108,6 +111,29 @@ optional<RenderCursor> RenderBufferBuilder<Cell>::renderCursor() const
 
 template <typename Cell>
 RenderCell RenderBufferBuilder<Cell>::makeRenderCellExplicit(ColorPalette const& _colorPalette,
+                                                             u32string graphemeCluster,
+                                                             ColumnCount width,
+                                                             CellFlags flags,
+                                                             RGBColor fg,
+                                                             RGBColor bg,
+                                                             Color ul,
+                                                             LineOffset _line,
+                                                             ColumnOffset _column)
+{
+    auto renderCell = RenderCell {};
+    renderCell.backgroundColor = bg;
+    renderCell.foregroundColor = fg;
+    renderCell.decorationColor = getUnderlineColor(_colorPalette, flags, fg, ul);
+    renderCell.position.line = _line;
+    renderCell.position.column = _column;
+    renderCell.flags = flags;
+    renderCell.width = unbox<uint8_t>(width);
+    renderCell.codepoints = move(graphemeCluster);
+    return renderCell;
+}
+
+template <typename Cell>
+RenderCell RenderBufferBuilder<Cell>::makeRenderCellExplicit(ColorPalette const& _colorPalette,
                                                              char32_t codepoint,
                                                              CellFlags flags,
                                                              RGBColor fg,
@@ -207,12 +233,16 @@ void RenderBufferBuilder<Cell>::renderTrivialLine(TriviallyStyledLineBuffer cons
     //            lineBuffer.displayWidth,
     //            lineBuffer.text.view());
 
-    auto const frontIndex = output.screen.size();
+    auto const frontIndex = output.cells.size();
 
     auto const textMargin = min(boxed_cast<ColumnOffset>(terminal.pageSize().columns),
-                                ColumnOffset::cast_from(lineBuffer.text.size()));
+                                ColumnOffset::cast_from(lineBuffer.usedColumns));
     auto const pageColumnsEnd = boxed_cast<ColumnOffset>(terminal.pageSize().columns);
-    for (auto columnOffset = ColumnOffset(0); columnOffset < textMargin; ++columnOffset)
+
+    // {{{ render text
+    auto graphemeClusterSegmenter = unicode::utf8_grapheme_segmenter(lineBuffer.text.view());
+    auto columnOffset = ColumnOffset(0);
+    for (u32string const& graphemeCluster: graphemeClusterSegmenter)
     {
         auto const pos = CellLocation { lineOffset, columnOffset };
         auto const gridPosition = terminal.viewport().translateScreenToGridCoordinate(pos);
@@ -220,22 +250,27 @@ void RenderBufferBuilder<Cell>::renderTrivialLine(TriviallyStyledLineBuffer cons
                                                 lineBuffer.attributes.styles,
                                                 lineBuffer.attributes.foregroundColor,
                                                 lineBuffer.attributes.backgroundColor);
-        auto const codepoint = static_cast<char32_t>(lineBuffer.text[unbox<size_t>(columnOffset)]);
+        auto const width = ColumnCount::cast_from(unicode::width(graphemeCluster.front()));
+        // TODO(pr) get width for the cluster, and not the first codepoint.
 
+        output.cells.emplace_back(makeRenderCellExplicit(terminal.colorPalette(),
+                                                         graphemeCluster,
+                                                         width,
+                                                         lineBuffer.attributes.styles,
+                                                         fg,
+                                                         bg,
+                                                         lineBuffer.attributes.underlineColor,
+                                                         lineOffset,
+                                                         columnOffset));
+
+        columnOffset += ColumnOffset::cast_from(width);
         lineNr = lineOffset;
         prevWidth = 0;
         prevHasCursor = false;
-
-        output.screen.emplace_back(makeRenderCellExplicit(terminal.colorPalette(),
-                                                          codepoint,
-                                                          lineBuffer.attributes.styles,
-                                                          fg,
-                                                          bg,
-                                                          lineBuffer.attributes.underlineColor,
-                                                          lineOffset,
-                                                          columnOffset));
     }
+    // }}}
 
+    // {{{ fill the remaining empty cells
     for (auto columnOffset = textMargin; columnOffset < pageColumnsEnd; ++columnOffset)
     {
         auto const pos = CellLocation { lineOffset, columnOffset };
@@ -245,7 +280,7 @@ void RenderBufferBuilder<Cell>::renderTrivialLine(TriviallyStyledLineBuffer cons
                                                 lineBuffer.attributes.foregroundColor,
                                                 lineBuffer.attributes.backgroundColor);
 
-        output.screen.emplace_back(makeRenderCellExplicit(terminal.colorPalette(),
+        output.cells.emplace_back(makeRenderCellExplicit(terminal.colorPalette(),
                                                           char32_t { 0 },
                                                           lineBuffer.attributes.styles,
                                                           fg,
@@ -254,11 +289,12 @@ void RenderBufferBuilder<Cell>::renderTrivialLine(TriviallyStyledLineBuffer cons
                                                           lineOffset,
                                                           columnOffset));
     }
+    // }}}
 
-    auto const backIndex = output.screen.size() - 1;
+    auto const backIndex = output.cells.size() - 1;
 
-    output.screen[frontIndex].groupStart = true;
-    output.screen[backIndex].groupEnd = true;
+    output.cells[frontIndex].groupStart = true;
+    output.cells[backIndex].groupEnd = true;
 }
 
 template <typename Cell>
@@ -273,9 +309,9 @@ void RenderBufferBuilder<Cell>::startLine(LineOffset _line) noexcept
 template <typename Cell>
 void RenderBufferBuilder<Cell>::endLine() noexcept
 {
-    if (!output.screen.empty())
+    if (!output.cells.empty())
     {
-        output.screen.back().groupEnd = true;
+        output.cells.back().groupEnd = true;
     }
 }
 
@@ -299,34 +335,34 @@ void RenderBufferBuilder<Cell>::renderCell(Cell const& screenCell, LineOffset _l
             if (!cellEmpty || customBackground)
             {
                 state = State::Sequence;
-                output.screen.emplace_back(makeRenderCell(terminal.colorPalette(),
-                                                          terminal.state().hyperlinks,
-                                                          screenCell,
-                                                          fg,
-                                                          bg,
-                                                          _line,
-                                                          _column));
-                output.screen.back().groupStart = true;
+                output.cells.emplace_back(makeRenderCell(terminal.colorPalette(),
+                                                         terminal.state().hyperlinks,
+                                                         screenCell,
+                                                         fg,
+                                                         bg,
+                                                         _line,
+                                                         _column));
+                output.cells.back().groupStart = true;
             }
             break;
         case State::Sequence:
             if (cellEmpty && !customBackground)
             {
-                output.screen.back().groupEnd = true;
+                output.cells.back().groupEnd = true;
                 state = State::Gap;
             }
             else
             {
-                output.screen.emplace_back(makeRenderCell(terminal.colorPalette(),
-                                                          terminal.state().hyperlinks,
-                                                          screenCell,
-                                                          fg,
-                                                          bg,
-                                                          _line,
-                                                          _column));
+                output.cells.emplace_back(makeRenderCell(terminal.colorPalette(),
+                                                         terminal.state().hyperlinks,
+                                                         screenCell,
+                                                         fg,
+                                                         bg,
+                                                         _line,
+                                                         _column));
 
                 if (isNewLine)
-                    output.screen.back().groupStart = true;
+                    output.cells.back().groupStart = true;
             }
             break;
     }
